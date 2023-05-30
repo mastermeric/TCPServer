@@ -1,9 +1,15 @@
-﻿namespace TCPServer;
-class Program
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace TCPServer
 {
-    static void Main(string[] args)
+    public class Program
     {
-        Console.WriteLine("Hello, World!");
-        Console.ReadLine();
+      public static void Main(string[] args)
+     {
+
+     }
     }
 }
