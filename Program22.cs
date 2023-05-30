@@ -5,7 +5,7 @@ using System.Text;
 namespace TCPServer;
 static class Program22
     {
-        static void Main(string[] args)
+        static void Main2(string[] args)
         {
             TcpListener listener = new TcpListener(System.Net.IPAddress.Any, 6666);
             listener.Start();
