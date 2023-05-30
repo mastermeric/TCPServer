@@ -11,35 +11,44 @@ namespace TCPServer
     public class TcpServer
     {
         private TcpListener _server;
-        private Boolean _isRunning;
 
         public TcpServer(int port)
         {
             _server = new TcpListener(IPAddress.Any, port);
             _server.Start();
 
-            _isRunning = true;
 
             LoopClients();
         }
 
-        private void LoopClients()
+        private async void LoopClients()
         {
-            while (_isRunning)
+            while (true)
             {
+Dene:
+                try
+                {                
                 // wait for client connection
                 TcpClient newClient = _server.AcceptTcpClient();
 
-                // client found.
-                // create a thread to handle communication
+                // client found.. create a thread to handle communication
                 Thread t = new Thread(new ParameterizedThreadStart(HandleClient));
                 t.Start(newClient);
+                }
+                catch (System.Exception ex)
+                {
+                    Console.WriteLine("ERROR at LoopClients > " + ex.Message);
+                    goto Dene;
+                }
             }
         }
 
         private void HandleClient(object obj)
         {
-            // retrieve client from parameter passed to thread
+            String _clientIP = "";
+            try
+            {
+                // retrieve client from parameter passed to thread
             TcpClient client = (TcpClient)obj;
 
             // sets two streams
@@ -51,46 +60,40 @@ namespace TCPServer
             //Boolean bClientConnected = true;
             String sData = null;
 
-            String clientIP = IPAddress.Parse(((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString()).ToString();
+            _clientIP = IPAddress.Parse(((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString()).ToString();
 
             if(client.Connected) {
-                Console.WriteLine(clientIP + " is Connected !");
+                Console.WriteLine(_clientIP + " is Connected !");
             } else {
-                Console.WriteLine(clientIP + " is DISCONNECTED !");
+                Console.WriteLine(_clientIP + " is DISCONNECTED !");
             }
 
             while (true)
             {
                 //metot1 : reads from stream
-                sData = sReader.ReadLine();
+                // sData = sReader.ReadLine();
+                // if(sData != null)
+                // {
+                //     Console.WriteLine(_clientIP +" > " + sData);
+                // } else {
+                //     break;
+                // }
+
+                Byte[] data = new Byte[256];
+                NetworkStream stream = client.GetStream();
+                Int32 bytes = stream.Read(data, 0, data.Length);
+                sData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
                 if(sData != null)
                 {
-                    Console.WriteLine("Client > " + sData);
+                    Console.WriteLine(_clientIP +" > " + sData);
+                } else {
+                    break;
                 }
-
-
-                //metot2 :
-                /*
-                var Stream = client.GetStream();
-                byte[] _bufferedData = new byte[client.ReceiveBufferSize]; // Initialize a new empty byte array with the data length.
-                StringBuilder _stringData = new();
-
-                while (Stream.DataAvailable) // Start converting bytes to string
-                {
-                    int _byteData = Stream.Read(_bufferedData, 0, _bufferedData.Length);
-                    _stringData.AppendFormat("{0}", Encoding.ASCII.GetString(_bufferedData, 0, _byteData));
-                }  // Until stream data is available
-
-                if (_stringData != null) // Stream data is ready and converted to string Do some stuffs
-                {
-                    Console.WriteLine(_stringData);
-                }
-                */
-
-
-                // to write something back.
-                // sWriter.WriteLine("Meaningfull things here");
-                // sWriter.Flush();
+            }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(_clientIP + " DISCONNECTED ! ");
             }
         }
     }
