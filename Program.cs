@@ -18,6 +18,7 @@ class Program
 
             //metot1
             TcpServer server = new TcpServer(6666);
+            Console.ReadLine();
 
             //metot2
             // await new Program().StartListener();

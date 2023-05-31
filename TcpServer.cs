@@ -25,11 +25,14 @@ namespace TCPServer
         {
             while (true)
             {
-Dene:
                 try
-                {                
+                {
                 // wait for client connection
-                TcpClient newClient = _server.AcceptTcpClient();
+                TcpClient newClient = await _server.AcceptTcpClientAsync();
+
+                string _clientIP = IPAddress.Parse(((IPEndPoint)newClient.Client.RemoteEndPoint).Address.ToString()).ToString();
+
+                Console.WriteLine(newClient.Client.Handle.ToString() +  " > " + _clientIP + " Connected !");
 
                 // client found.. create a thread to handle communication
                 Thread t = new Thread(new ParameterizedThreadStart(HandleClient));
@@ -38,7 +41,6 @@ Dene:
                 catch (System.Exception ex)
                 {
                     Console.WriteLine("ERROR at LoopClients > " + ex.Message);
-                    goto Dene;
                 }
             }
         }
@@ -62,12 +64,6 @@ Dene:
 
             _clientIP = IPAddress.Parse(((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString()).ToString();
 
-            if(client.Connected) {
-                Console.WriteLine(_clientIP + " is Connected !");
-            } else {
-                Console.WriteLine(_clientIP + " is DISCONNECTED !");
-            }
-
             while (true)
             {
                 //metot1 : reads from stream
@@ -81,12 +77,15 @@ Dene:
 
                 Byte[] data = new Byte[256];
                 NetworkStream stream = client.GetStream();
+
+
                 Int32 bytes = stream.Read(data, 0, data.Length);
                 sData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
-                if(sData != null)
+                if(bytes > 0)
                 {
-                    Console.WriteLine(_clientIP +" > " + sData);
+                    Console.WriteLine(client.Client.Handle.ToString() +  " > " + _clientIP + " > "+ sData);
                 } else {
+                    Console.WriteLine(client.Client.Handle.ToString() +  " > " + _clientIP + " Is Disconnected !");
                     break;
                 }
             }
