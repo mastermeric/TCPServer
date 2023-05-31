@@ -75,12 +75,29 @@ namespace TCPServer
                 //     break;
                 // }
 
+                //metot2 : read string from bytes
+                // Byte[] data = new Byte[256];
+                // NetworkStream stream = client.GetStream();
+                // Int32 bytes = stream.Read(data, 0, data.Length);
+                // sData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
+                // if(bytes > 0)
+                // {
+                //     Console.WriteLine(client.Client.Handle.ToString() +  " > " + _clientIP + " > "+ sData);
+                // } else {
+                //     Console.WriteLine(client.Client.Handle.ToString() +  " > " + _clientIP + " Is Disconnected !");
+                //     break;
+                // }
+
+                //Yontem3 : Read Byte arrays..
                 Byte[] data = new Byte[256];
                 NetworkStream stream = client.GetStream();
-
-
                 Int32 bytes = stream.Read(data, 0, data.Length);
-                sData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
+
+                Byte[] dataReal = new Byte[bytes];
+                Array.Copy(data,0,dataReal,0,bytes);
+
+                sData = BitConverter.ToString(dataReal).Replace("-"," ");
+
                 if(bytes > 0)
                 {
                     Console.WriteLine(client.Client.Handle.ToString() +  " > " + _clientIP + " > "+ sData);
@@ -96,5 +113,4 @@ namespace TCPServer
             }
         }
     }
-
 }
