@@ -96,11 +96,14 @@ namespace TCPServer
                 Byte[] dataReal = new Byte[bytes];
                 Array.Copy(data,0,dataReal,0,bytes);
 
+                string strOkunurVeri = System.Text.Encoding.ASCII.GetString(dataReal);
+
                 sData = BitConverter.ToString(dataReal).Replace("-"," ");
 
                 if(bytes > 0)
                 {
                     Console.WriteLine(client.Client.Handle.ToString() +  " > " + _clientIP + " > "+ sData);
+                    Console.WriteLine("OkunurVeri > " + strOkunurVeri);
                 } else {
                     Console.WriteLine(client.Client.Handle.ToString() +  " > " + _clientIP + " Is Disconnected !");
                     break;
