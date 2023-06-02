@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -19,6 +20,23 @@ namespace TCPServer
 
 
             LoopClients();
+        }
+
+        public static Byte[] ConvertHexStringToByteArray(string hexString)
+        {
+            if (hexString.Length % 2 != 0)
+            {
+                throw new ArgumentException(String.Format(CultureInfo.InvariantCulture, "The binary key cannot have an odd number of digits: {0}", hexString));
+            }
+
+            byte[] data = new byte[hexString.Length / 2];
+            for (int index = 0; index < data.Length; index++)
+            {
+                string byteValue = hexString.Substring(index * 2, 2);
+                data[index] = byte.Parse(byteValue, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+            }
+
+            return data;
         }
 
         private async void LoopClients()
@@ -56,6 +74,7 @@ namespace TCPServer
             // sets two streams
             StreamWriter sWriter = new StreamWriter(client.GetStream(), Encoding.ASCII);
             StreamReader sReader = new StreamReader(client.GetStream(), Encoding.ASCII);
+
             // you could use the NetworkStream to read and write,
             // but there is no forcing flush, even when requested
 
@@ -90,23 +109,135 @@ namespace TCPServer
 
                 //Yontem3 : Read Byte arrays..
                 Byte[] data = new Byte[256];
+
+
+                //======  Protokol Numbers ======
+                // Login Message 		0x01
+                // Location Data 		0x12
+                // Status information 	0x13
+                // String information 	0x15
+                // Alarm data 			0x16
+
+                // ====== login msg     : 78 78 0D 01 01 23 45 67 89 01 23 45 00 01 8C DD 0D 0A
+                // Start Bit (2)		: 0x78 0x78
+                // Packet Length (1)	: 0x0D
+                // Protocol Number (1)	: 0x01
+                // Terminal ID (8)		: 0x01 0x23 0x45 0x67 0x89 0x01 0x23 0x45
+                // Info Serial Nor (2)	: 0x00 0x01
+                // Error Check (2)		: 0x8C 0xDD
+                // Stop Bit (2)		    : 0x0D 0x0
+
+                // ====== GPS msg 	        :
+                // Start Bit (2) 			: 0x78 0x78
+                // Packet Length (1) 		: 0x1F(31) or 0x21(33)
+                // Protocol Number (1)		: 0x12
+                // Date Time (6) 			: 0x0B 0x08 0x1D 0x11 0x2E 0x10
+                // Quantity satellite (1) 	: 0xCF
+                // Latitude (4) 			: 0x02 0x7A 0xC7 0xEB
+                // Longitude (4) 			: 0x0C 0x46 0x58 0x49
+                // Speed (1) 				: 0x00
+                // Course,Status/ACC AC (2): 0x14 0x8F
+                // LBS Information MCC (2)	: 0x01 0xCC
+                // MNC (1)					: 0x00
+                // LAC (2)					: 0x28 0x7D
+                // Cell ID (3)				: 0x00 0x1F 0xB8
+                // ACC+input2+ADC 0 or (2)	: 0x10 0xB6
+                // Serial Number (2) 		: 0x00 0x03
+                // Error Check (2)			: 0x80 0x81
+                // Stop Bit (2)			    : 0x0D 0x0A
+
+
+                String strStartBits = "";
+                String strStoptBits = "";
+
+                String strSerilNo = "";
+                String strErrorCheck = "";
+
+                String strDataLen = "";
+                String strProtokolNoByte = "";
+                String strTerminalIDBytes = "";
+                String strDateBytes = "";
+                String strQuantityOfSattelites = "";
+                String strLatBytes = "";
+                String strLongBytes = "";
+                String strSpeedByte = "";
+
+                /*
+                Byte[] StartBits = {0x78 , 0x78};
+                Byte[] StoptBits = {0x0D , 0x0A};
+                Byte[] DataLenByte = {0x00};
+                Byte[] ProtokolNoByte = {0x00};
+                Byte[] TerminalIDBytes = new Byte[8];
+                Byte[] DateBytes = new Byte[6];
+                Byte[] LatBytes = new Byte[4];
+                Byte[] LongBytes = new Byte[4];
+                Byte[] SpeedByte = {0x00};
+
+                Array.Copy(dataReal,0,StartBits,0,2);
+                Array.Copy(dataReal,2,DataLenByte,0,1);
+                Array.Copy(dataReal,3,StartBits,0,1);
+                Array.Copy(dataReal,0,StartBits,0,2);
+                */
+
                 NetworkStream stream = client.GetStream();
-                Int32 bytes = stream.Read(data, 0, data.Length);
+                Int32 bumberOfBytesInTCP = stream.Read(data, 0, data.Length);
+                Byte[] dataReal = new Byte[bumberOfBytesInTCP];
+                Array.Copy(data,0,dataReal,0,bumberOfBytesInTCP);
 
-                Byte[] dataReal = new Byte[bytes];
-                Array.Copy(data,0,dataReal,0,bytes);
+                sData = BitConverter.ToString(dataReal).Replace("-","");
 
-                string strOkunurVeri = System.Text.Encoding.ASCII.GetString(dataReal);
-
-                sData = BitConverter.ToString(dataReal).Replace("-"," ");
-
-                if(bytes > 0)
+                if(bumberOfBytesInTCP > 0)
                 {
                     Console.WriteLine(client.Client.Handle.ToString() +  " > " + _clientIP + " > "+ sData);
-                    Console.WriteLine("OkunurVeri > " + strOkunurVeri);
                 } else {
                     Console.WriteLine(client.Client.Handle.ToString() +  " > " + _clientIP + " Is Disconnected !");
                     break;
+                }
+
+
+                if(sData.Contains("7878") && sData.Contains("0D0A"))  {
+
+                strDataLen = sData.Substring(4,2);
+                strProtokolNoByte = sData.Substring(6,2);
+
+                    //LOGIN Msg
+                    if(strProtokolNoByte == "01") {
+
+                        Console.WriteLine(_clientIP +  " > LOGIN DATA >> " +  sData);
+
+                        strTerminalIDBytes = sData.Substring(8,16);
+                        strSerilNo =sData.Substring(24,4);
+                        strErrorCheck = sData.Substring(28,4);
+
+                        string sendData = "78780501" + strSerilNo + strErrorCheck + "0D0A";
+                        Console.WriteLine(_clientIP +  " > SEND DATA >> " +  sendData);
+
+                        //stream.Flush();
+                        //NetworkStream tempStream = client.GetStream();
+                        Byte[] sendDataBytes = ConvertHexStringToByteArray(sendData);
+                        stream.Write(sendDataBytes, 0, sendDataBytes.Length);
+
+                        /*
+                        Byte[] data2 = new Byte[256];
+                        Int32 bumberOfBytesInTCP2 = stream.Read(data2, 0, data2.Length);
+                        Byte[] dataReal2 = new Byte[bumberOfBytesInTCP2];
+                        Array.Copy(data2,0,dataReal2,0,bumberOfBytesInTCP2);
+
+                        String sData2 = BitConverter.ToString(dataReal).Replace("-","");
+                        Console.WriteLine(_clientIP +  " > response  >> " +  sData2);
+                        */
+                    }
+
+                    //GPS Msg
+                    if(strProtokolNoByte == "12") {
+                        Console.WriteLine(_clientIP +  " > GPS DATA >> " +  sData);
+                        /*
+                        strDateBytes = sData.Substring(8,12);
+                        strQuantityOfSattelites =sData.Substring(20,2);
+                        strLatBytes =sData.Substring(22,8);
+                        strLongBytes =sData.Substring(30,8);
+                        */
+                    }
                 }
             }
             }
