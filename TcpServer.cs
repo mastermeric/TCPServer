@@ -113,7 +113,7 @@ namespace TCPServer
 
                 //======  Protokol Numbers ======
                 // Login Message 		0x01
-                // Location Data 		0x12
+                // Location Data 		0x22
                 // Status information 	0x13
                 // String information 	0x15
                 // Alarm data 			0x16
@@ -129,8 +129,8 @@ namespace TCPServer
 
                 // ====== GPS msg 	        :
                 // Start Bit (2) 			: 0x78 0x78
-                // Packet Length (1) 		: 0x1F(31) or 0x21(33)
-                // Protocol Number (1)		: 0x12
+                // Packet Length (1) 		: 0x22
+                // Protocol Number (1)		: 0x22
                 // Date Time (6) 			: 0x0B 0x08 0x1D 0x11 0x2E 0x10
                 // Quantity satellite (1) 	: 0xCF
                 // Latitude (4) 			: 0x02 0x7A 0xC7 0xEB
@@ -180,14 +180,15 @@ namespace TCPServer
                 */
 
                 NetworkStream stream = client.GetStream();
-                Int32 bumberOfBytesInTCP = stream.Read(data, 0, data.Length);
-                Byte[] dataReal = new Byte[bumberOfBytesInTCP];
-                Array.Copy(data,0,dataReal,0,bumberOfBytesInTCP);
+                Int32 _numberOfBytesInTCP = stream.Read(data, 0, data.Length);
+                Byte[] dataReal = new Byte[_numberOfBytesInTCP];
+                Array.Copy(data,0,dataReal,0,_numberOfBytesInTCP);
 
                 sData = BitConverter.ToString(dataReal).Replace("-","");
 
-                if(bumberOfBytesInTCP > 0)
+                if(_numberOfBytesInTCP > 0)
                 {
+                    //MericY: Loglama icin tut..
                     Console.WriteLine(client.Client.Handle.ToString() +  " > " + _clientIP + " > "+ sData);
                 } else {
                     Console.WriteLine(client.Client.Handle.ToString() +  " > " + _clientIP + " Is Disconnected !");
@@ -203,40 +204,46 @@ namespace TCPServer
                     //LOGIN Msg
                     if(strProtokolNoByte == "01") {
 
-                        Console.WriteLine(_clientIP +  " > LOGIN DATA >> " +  sData);
+                        //Console.WriteLine(_clientIP +  " > LOGIN DATA >> " +  sData);
 
                         strTerminalIDBytes = sData.Substring(8,16);
                         strSerilNo =sData.Substring(24,4);
                         strErrorCheck = sData.Substring(28,4);
 
+                        Console.WriteLine("===================================");
+                        Console.WriteLine(_clientIP +  " > IMEI >> " +  strTerminalIDBytes);
+                        Console.WriteLine("===================================");
+
                         string sendData = "78780501" + strSerilNo + strErrorCheck + "0D0A";
-                        Console.WriteLine(_clientIP +  " > SEND DATA >> " +  sendData);
+                        //Console.WriteLine(_clientIP +  " > SEND DATA >> " +  sendData);
 
                         //stream.Flush();
                         //NetworkStream tempStream = client.GetStream();
                         Byte[] sendDataBytes = ConvertHexStringToByteArray(sendData);
                         stream.Write(sendDataBytes, 0, sendDataBytes.Length);
-
-                        /*
-                        Byte[] data2 = new Byte[256];
-                        Int32 bumberOfBytesInTCP2 = stream.Read(data2, 0, data2.Length);
-                        Byte[] dataReal2 = new Byte[bumberOfBytesInTCP2];
-                        Array.Copy(data2,0,dataReal2,0,bumberOfBytesInTCP2);
-
-                        String sData2 = BitConverter.ToString(dataReal).Replace("-","");
-                        Console.WriteLine(_clientIP +  " > response  >> " +  sData2);
-                        */
                     }
 
                     //GPS Msg
-                    if(strProtokolNoByte == "12") {
-                        Console.WriteLine(_clientIP +  " > GPS DATA >> " +  sData);
-                        /*
+                    if(strProtokolNoByte == "22") {
                         strDateBytes = sData.Substring(8,12);
                         strQuantityOfSattelites =sData.Substring(20,2);
                         strLatBytes =sData.Substring(22,8);
                         strLongBytes =sData.Substring(30,8);
-                        */
+                        strSpeedByte = sData.Substring(38,2);
+
+                        Console.WriteLine(_clientIP +  " > Date: " +  strDateBytes+  "  Lat: " +  strLatBytes+  " Lon: " +  strLongBytes+  " Speed: " +  strSpeedByte);
+
+                        long n1 = Int64.Parse(strLatBytes, NumberStyles.HexNumber);
+                        double XXXintVal1 = n1/30000;
+                        double res1 = Math.Round(XXXintVal1/60,7);
+                        Console.WriteLine(_clientIP + " > LAT : " + res1);
+
+                        long n2 = Int64.Parse(strLongBytes, NumberStyles.HexNumber);
+                        double XXXintVal2 = n2/30000;
+                        double res2 = Math.Round(XXXintVal2/60,7);
+                        Console.WriteLine(_clientIP + " > LONG : " + res2);
+
+                        Console.WriteLine(_clientIP + " > Hiz bilgisi : " + strSpeedByte);
                     }
                 }
             }
