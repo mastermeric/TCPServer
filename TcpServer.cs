@@ -181,7 +181,8 @@ namespace TCPServer
             }
             catch (Exception ex)
             {
-                Console.WriteLine(_clientIP + " DISCONNECTED ! ");
+                Console.WriteLine(_clientIP + " ERROR ----- DISCONNECTED ! " + ex.Message);
+                myWriter.WriteLine(_clientIP +  " > ERROR : " + ex.Message);
             }
         }
     }
