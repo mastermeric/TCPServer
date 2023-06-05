@@ -12,6 +12,8 @@ namespace TCPServer
     public class TcpServer
     {
         private TcpListener _server;
+        //ThreadSafeFileWriter  myWriter = new ThreadSafeFileWriter();
+        MultiThreadFileWriter myWriter = new MultiThreadFileWriter();
 
         public TcpServer(int port)
         {
@@ -51,6 +53,7 @@ namespace TCPServer
                 string _clientIP = IPAddress.Parse(((IPEndPoint)newClient.Client.RemoteEndPoint).Address.ToString()).ToString();
 
                 Console.WriteLine(newClient.Client.Handle.ToString() +  " > " + _clientIP + " Connected !");
+                myWriter.WriteLine(newClient.Client.Handle.ToString() +  " > " + _clientIP + " Connected !");
 
                 // client found.. create a thread to handle communication
                 Thread t = new Thread(new ParameterizedThreadStart(HandleClient));
@@ -63,6 +66,15 @@ namespace TCPServer
             }
         }
 
+        public decimal DecodeCoordinate(byte[] bytes)
+        {
+            decimal minutes = (bytes[0] << 24) + (bytes[1] << 16) + (bytes[2] << 8) + bytes[3];
+            minutes /= 30000;
+            minutes /= 60;
+            return minutes;
+        }
+
+        private static object myLocker = new object();
         private void HandleClient(object obj)
         {
             String _clientIP = "";
@@ -71,13 +83,6 @@ namespace TCPServer
                 // retrieve client from parameter passed to thread
             TcpClient client = (TcpClient)obj;
 
-            // sets two streams
-            StreamWriter sWriter = new StreamWriter(client.GetStream(), Encoding.ASCII);
-            StreamReader sReader = new StreamReader(client.GetStream(), Encoding.ASCII);
-
-            // you could use the NetworkStream to read and write,
-            // but there is no forcing flush, even when requested
-
             //Boolean bClientConnected = true;
             String sData = null;
 
@@ -85,67 +90,8 @@ namespace TCPServer
 
             while (true)
             {
-                //metot1 : reads from stream
-                // sData = sReader.ReadLine();
-                // if(sData != null)
-                // {
-                //     Console.WriteLine(_clientIP +" > " + sData);
-                // } else {
-                //     break;
-                // }
-
-                //metot2 : read string from bytes
-                // Byte[] data = new Byte[256];
-                // NetworkStream stream = client.GetStream();
-                // Int32 bytes = stream.Read(data, 0, data.Length);
-                // sData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
-                // if(bytes > 0)
-                // {
-                //     Console.WriteLine(client.Client.Handle.ToString() +  " > " + _clientIP + " > "+ sData);
-                // } else {
-                //     Console.WriteLine(client.Client.Handle.ToString() +  " > " + _clientIP + " Is Disconnected !");
-                //     break;
-                // }
-
                 //Yontem3 : Read Byte arrays..
                 Byte[] data = new Byte[256];
-
-
-                //======  Protokol Numbers ======
-                // Login Message 		0x01
-                // Location Data 		0x22
-                // Status information 	0x13
-                // String information 	0x15
-                // Alarm data 			0x16
-
-                // ====== login msg     : 78 78 0D 01 01 23 45 67 89 01 23 45 00 01 8C DD 0D 0A
-                // Start Bit (2)		: 0x78 0x78
-                // Packet Length (1)	: 0x0D
-                // Protocol Number (1)	: 0x01
-                // Terminal ID (8)		: 0x01 0x23 0x45 0x67 0x89 0x01 0x23 0x45
-                // Info Serial Nor (2)	: 0x00 0x01
-                // Error Check (2)		: 0x8C 0xDD
-                // Stop Bit (2)		    : 0x0D 0x0
-
-                // ====== GPS msg 	        :
-                // Start Bit (2) 			: 0x78 0x78
-                // Packet Length (1) 		: 0x22
-                // Protocol Number (1)		: 0x22
-                // Date Time (6) 			: 0x0B 0x08 0x1D 0x11 0x2E 0x10
-                // Quantity satellite (1) 	: 0xCF
-                // Latitude (4) 			: 0x02 0x7A 0xC7 0xEB
-                // Longitude (4) 			: 0x0C 0x46 0x58 0x49
-                // Speed (1) 				: 0x00
-                // Course,Status/ACC AC (2): 0x14 0x8F
-                // LBS Information MCC (2)	: 0x01 0xCC
-                // MNC (1)					: 0x00
-                // LAC (2)					: 0x28 0x7D
-                // Cell ID (3)				: 0x00 0x1F 0xB8
-                // ACC+input2+ADC 0 or (2)	: 0x10 0xB6
-                // Serial Number (2) 		: 0x00 0x03
-                // Error Check (2)			: 0x80 0x81
-                // Stop Bit (2)			    : 0x0D 0x0A
-
 
                 String strStartBits = "";
                 String strStoptBits = "";
@@ -162,22 +108,7 @@ namespace TCPServer
                 String strLongBytes = "";
                 String strSpeedByte = "";
 
-                /*
-                Byte[] StartBits = {0x78 , 0x78};
-                Byte[] StoptBits = {0x0D , 0x0A};
-                Byte[] DataLenByte = {0x00};
-                Byte[] ProtokolNoByte = {0x00};
-                Byte[] TerminalIDBytes = new Byte[8];
-                Byte[] DateBytes = new Byte[6];
-                Byte[] LatBytes = new Byte[4];
-                Byte[] LongBytes = new Byte[4];
-                Byte[] SpeedByte = {0x00};
 
-                Array.Copy(dataReal,0,StartBits,0,2);
-                Array.Copy(dataReal,2,DataLenByte,0,1);
-                Array.Copy(dataReal,3,StartBits,0,1);
-                Array.Copy(dataReal,0,StartBits,0,2);
-                */
 
                 NetworkStream stream = client.GetStream();
                 Int32 _numberOfBytesInTCP = stream.Read(data, 0, data.Length);
@@ -190,8 +121,10 @@ namespace TCPServer
                 {
                     //MericY: Loglama icin tut..
                     Console.WriteLine(client.Client.Handle.ToString() +  " > " + _clientIP + " > "+ sData);
+                    myWriter.WriteLine(client.Client.Handle.ToString() +  " > " + _clientIP + " > "+ sData);
                 } else {
                     Console.WriteLine(client.Client.Handle.ToString() +  " > " + _clientIP + " Is Disconnected !");
+                    myWriter.WriteLine(client.Client.Handle.ToString() +  " > " + _clientIP + " Is Disconnected ! ");
                     break;
                 }
 
@@ -233,15 +166,13 @@ namespace TCPServer
 
                         Console.WriteLine(_clientIP +  " > Date: " +  strDateBytes+  "  Lat: " +  strLatBytes+  " Lon: " +  strLongBytes+  " Speed: " +  strSpeedByte);
 
-                        long n1 = Int64.Parse(strLatBytes, NumberStyles.HexNumber);
-                        double XXXintVal1 = n1/30000;
-                        double res1 = Math.Round(XXXintVal1/60,7);
-                        Console.WriteLine(_clientIP + " > LAT : " + res1);
+                        decimal latVal = DecodeCoordinate(ConvertHexStringToByteArray(strLatBytes));
+                        decimal longVal = DecodeCoordinate(ConvertHexStringToByteArray(strLongBytes));
 
-                        long n2 = Int64.Parse(strLongBytes, NumberStyles.HexNumber);
-                        double XXXintVal2 = n2/30000;
-                        double res2 = Math.Round(XXXintVal2/60,7);
-                        Console.WriteLine(_clientIP + " > LONG : " + res2);
+                        latVal = Math.Round(latVal,5);
+                        longVal = Math.Round(longVal,5);
+                        Console.WriteLine(_clientIP + " > LAT : " + latVal);
+                        Console.WriteLine(_clientIP + " > LONG : " + longVal);
 
                         Console.WriteLine(_clientIP + " > Hiz bilgisi : " + strSpeedByte);
                     }
