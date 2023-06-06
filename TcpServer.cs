@@ -143,9 +143,9 @@ namespace TCPServer
                         strSerilNo =sData.Substring(24,4);
                         strErrorCheck = sData.Substring(28,4);
 
-                        Console.WriteLine("===================================");
-                        Console.WriteLine(_clientIP +  " > IMEI >> " +  strTerminalIDBytes);
-                        Console.WriteLine("===================================");
+                        myWriter.WriteLine("===================================");
+                        myWriter.WriteLine(_clientIP +  " > IMEI >> " +  strTerminalIDBytes);
+                        myWriter.WriteLine("===================================");
 
                         string sendData = "78780501" + strSerilNo + strErrorCheck + "0D0A";
                         //Console.WriteLine(_clientIP +  " > SEND DATA >> " +  sendData);
@@ -164,25 +164,24 @@ namespace TCPServer
                         strLongBytes =sData.Substring(30,8);
                         strSpeedByte = sData.Substring(38,2);
 
-                        Console.WriteLine(_clientIP +  " > Date: " +  strDateBytes+  "  Lat: " +  strLatBytes+  " Lon: " +  strLongBytes+  " Speed: " +  strSpeedByte);
+                        myWriter.WriteLine(_clientIP +  " > Date: " +  strDateBytes+  "  Lat: " +  strLatBytes+  " Lon: " +  strLongBytes+  " Speed: " +  strSpeedByte);
 
                         decimal latVal = DecodeCoordinate(ConvertHexStringToByteArray(strLatBytes));
                         decimal longVal = DecodeCoordinate(ConvertHexStringToByteArray(strLongBytes));
 
                         latVal = Math.Round(latVal,5);
                         longVal = Math.Round(longVal,5);
-                        Console.WriteLine(_clientIP + " > LAT : " + latVal);
-                        Console.WriteLine(_clientIP + " > LONG : " + longVal);
-
-                        Console.WriteLine(_clientIP + " > Hiz bilgisi : " + strSpeedByte);
+                        myWriter.WriteLine(_clientIP + " > LAT : " + latVal);
+                        myWriter.WriteLine(_clientIP + " > LONG : " + longVal);
+                        myWriter.WriteLine(_clientIP + " > Hiz bilgisi : " + strSpeedByte);
                     }
                 }
             }
             }
             catch (Exception ex)
             {
-                Console.WriteLine(_clientIP + " ERROR ----- DISCONNECTED ! " + ex.Message);
-                myWriter.WriteLine(_clientIP +  " > ERROR : " + ex.Message);
+                Console.WriteLine(_clientIP + " ERROR ----- DISCONNECTED : " + ex.Message);
+                myWriter.WriteLine(_clientIP +  " > ERROR ----- DISCONNECTED : " + ex.Message);
             }
         }
     }

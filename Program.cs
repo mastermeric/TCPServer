@@ -21,9 +21,16 @@ class Program
             Console.WriteLine("SERVER Started.. OK..");
 
             //metot1
-
             TcpServer server = new TcpServer(6666);
-            Console.ReadLine();
+            //Console.ReadLine();
+            ManualResetEvent _quitEvent = new ManualResetEvent(false);
+            _quitEvent.WaitOne();
+
+            // _ = Task.Factory.StartNew(() =>
+            // {
+            //     TcpServer server = new TcpServer(6666);
+            //     Console.ReadLine();
+            // }, TaskCreationOptions.LongRunning);
 
             // while(true)
             // {
