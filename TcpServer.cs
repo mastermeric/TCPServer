@@ -120,11 +120,12 @@ namespace TCPServer
                 if(_numberOfBytesInTCP > 0)
                 {
                     //MericY: Loglama icin tut..
-                    Console.WriteLine(client.Client.Handle.ToString() +  " > " + _clientIP + " > "+ sData);
-                    myWriter.WriteLine(client.Client.Handle.ToString() +  " > " + _clientIP + " > "+ sData);
+                    //Console.WriteLine(client.Client.Handle.ToString() +  " > " + _clientIP + " > "+ sData);
+                    //myWriter.WriteLine(client.Client.Handle.ToString() +  " > " + _clientIP + " > "+ sData);
                 } else {
                     Console.WriteLine(client.Client.Handle.ToString() +  " > " + _clientIP + " Is Disconnected !");
                     myWriter.WriteLine(client.Client.Handle.ToString() +  " > " + _clientIP + " Is Disconnected ! ");
+                    client.Close();
                     break;
                 }
 
@@ -164,16 +165,15 @@ namespace TCPServer
                         strLongBytes =sData.Substring(30,8);
                         strSpeedByte = sData.Substring(38,2);
 
-                        myWriter.WriteLine(_clientIP +  " > Date: " +  strDateBytes+  "  Lat: " +  strLatBytes+  " Lon: " +  strLongBytes+  " Speed: " +  strSpeedByte);
+                        //myWriter.WriteLine(_clientIP +  " > Date: " +  strDateBytes+  "  Lat: " +  strLatBytes+  " Lon: " +  strLongBytes+  " Speed: " +  strSpeedByte);
 
                         decimal latVal = DecodeCoordinate(ConvertHexStringToByteArray(strLatBytes));
                         decimal longVal = DecodeCoordinate(ConvertHexStringToByteArray(strLongBytes));
+                        Int64 hiz = Int64.Parse(strSpeedByte, System.Globalization.NumberStyles.HexNumber);
 
                         latVal = Math.Round(latVal,5);
                         longVal = Math.Round(longVal,5);
-                        myWriter.WriteLine(_clientIP + " > LAT : " + latVal);
-                        myWriter.WriteLine(_clientIP + " > LONG : " + longVal);
-                        myWriter.WriteLine(_clientIP + " > Hiz bilgisi : " + strSpeedByte);
+                        myWriter.WriteLine(_clientIP + " > LAT/LONG/HIZ : " + latVal + ","+longVal + "," + hiz + "km/h");
                     }
                 }
             }
