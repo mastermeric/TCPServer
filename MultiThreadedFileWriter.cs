@@ -14,6 +14,7 @@ namespace TCPServer
 
         //public static string lokalLogDosyasi = @"C:\OziTeknolojiApiLoglar\" + DateTime.Now.ToShortDateString().Replace(".", "") + "_ErrorReport.log";
         public static string lokalLogDosyasi = DateTime.Now.ToString("ddMMyyyy") + "_DailyLogReport.log";
+        public static string lokalErrorLogDosyasi = DateTime.Now.ToString("ddMMyyyy") + "_DailyErrorReport.log";
 
         public MultiThreadFileWriter()
         {
@@ -27,7 +28,7 @@ namespace TCPServer
         /// to be written.
         public void WriteLine(string line)
         {
-            line = DateTime.Now.ToString("ddMMyyyy_HHmmss") +  " -> "+  line;
+            line = DateTime.Now.ToString("HHmmss") +  " -> "+  line;
             _textToWrite.Enqueue(line);
         }
 
@@ -48,7 +49,7 @@ namespace TCPServer
                         await w.WriteLineAsync(textLine);
                     }
                     w.Flush();
-                    Thread.Sleep(100);
+                    Thread.Sleep(1);
                 }
             }
         }

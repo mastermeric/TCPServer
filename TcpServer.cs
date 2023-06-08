@@ -62,6 +62,7 @@ namespace TCPServer
                 catch (System.Exception ex)
                 {
                     Console.WriteLine("ERROR at LoopClients > " + ex.Message);
+                    myWriter.WriteLine("ERROR at LoopClients > " + ex.Message);
                 }
             }
         }
@@ -173,7 +174,7 @@ namespace TCPServer
 
                         latVal = Math.Round(latVal,5);
                         longVal = Math.Round(longVal,5);
-                        myWriter.WriteLine(_clientIP + " > LAT/LONG/HIZ : " + latVal + ","+longVal + "," + hiz + "km/h");
+                        myWriter.WriteLine(_clientIP + " > " + latVal + ","+longVal + "," + hiz + "km/h");
                     }
                 }
             }
