@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -77,6 +78,9 @@ namespace TCPServer
         }
 
         private static object myLocker = new object();
+
+        ConcurrentDictionary<string, List<string>> myList = new ConcurrentDictionary<string, List<string>>();
+
         private async void HandleClient(object obj)
         {
             String _clientIP = "";
@@ -150,6 +154,22 @@ namespace TCPServer
                         myWriter.WriteLine(_clientIP +  " > IMEI >> " +  strTerminalIDBytes);
                         myWriter.WriteLine("===================================");
 
+                        //==========  IMEI - IP Listesi  ======================
+                        //lock(myLocker) 
+                        {
+                            //IMEI varsa listeye ekle
+                            if(myList.ContainsKey(strTerminalIDBytes)) {
+                                //listede yok ise ekle
+                                if(!myList[strTerminalIDBytes].Contains(_clientIP)) {
+                                    myList[strTerminalIDBytes].Add(_clientIP);
+                                }
+                            }else {
+                                //IMEI ilkke gleince listeyi yarat..
+                                myList[strTerminalIDBytes] = new List<string> {_clientIP};
+                            }
+                        }
+                        //======================================================
+
                         string sendData = "78780501" + strSerilNo + strErrorCheck + "0D0A";
                         //Console.WriteLine(_clientIP +  " > SEND DATA >> " +  sendData);
 
@@ -161,6 +181,22 @@ namespace TCPServer
 
                     //GPS Msg
                     if(strProtokolNoByte == "22") {
+                        //==========  IMEI - IP Listesi  ======================
+                        //lock(myLocker) 
+                        {
+                            //IMEI varsa listeye ekle
+                            if(myList.ContainsKey(strTerminalIDBytes)) {
+                                //listede yok ise ekle
+                                if(!myList[strTerminalIDBytes].Contains(_clientIP)) {
+                                    myList[strTerminalIDBytes].Add(_clientIP);
+                                }
+                            }else {
+                                //IMEI ilkke gleince listeyi yarat..
+                                myList[strTerminalIDBytes] = new List<string> {_clientIP};
+                            }
+                        }
+                        //=====================================================
+
                         strDateBytes = sData.Substring(8,12);
                         strQuantityOfSattelites =sData.Substring(20,2);
                         strLatBytes =sData.Substring(22,8);
@@ -190,17 +226,27 @@ namespace TCPServer
                             httpClient.DefaultRequestHeaders.Add("User-Agent", "C# console program");
                             httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-                            var url = "AracLog/WriteLog/" + strTerminalIDBytes+"/"+latVal+"/"+longVal+"/"+"Y"+"/"+strSpeedByte;
-                            //var url = "AracLog/WriteLog/" + 4444444444+"/"+444+"/"+444+"/"+"Y"+"/"+44;
+                            var myIMEI = myList.FirstOrDefault(x => x.Value.Contains(_clientIP)).Key;
+                            if(myIMEI != null) {
+                                //var url = "AracLog/WriteLog/" + 4444444444+"/"+444+"/"+444+"/"+"Y"+"/"+44;
+                                var url = "AracLog/WriteLog/" + myIMEI+"/"+latVal+"/"+longVal+"/"+"Y"+"/"+strSpeedByte;
 
-                            HttpResponseMessage response = await httpClient.GetAsync(url);
-                            response.EnsureSuccessStatusCode();
-                            var resp = await response.Content.ReadAsStringAsync();
-                            if(response.StatusCode != HttpStatusCode.OK) {
-                                myWriter.WriteLine(_clientIP +  " > API ERROR > : " + resp);
-                                myWriter.WriteLine(" URL : " + url);
+                                //gecici log..
+                                myWriter.WriteLine(" URL :::: " + httpClient.BaseAddress + url);
+
+
+                                HttpResponseMessage response = await httpClient.GetAsync(url);
+                                response.EnsureSuccessStatusCode();
+                                var resp = await response.Content.ReadAsStringAsync();
+                                if(response.StatusCode != HttpStatusCode.OK) {
+                                    myWriter.WriteLine(_clientIP +  " > API ERROR > : " + resp);
+                                    myWriter.WriteLine(" URL : " + url);
+                                }
+                                //FTPBilgiler ftpInfo = JsonConvert.DeserializeObject<FTPBilgiler>(resp);
+                            } else {
+                                //gecici log..
+                                myWriter.WriteLine("UYARI !!! " + _clientIP + " İçin IMEI Verisi Yok.." );
                             }
-                            //FTPBilgiler ftpInfo = JsonConvert.DeserializeObject<FTPBilgiler>(resp);
                         }
                         //============================================================
                     }
