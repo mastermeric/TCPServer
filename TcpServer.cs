@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
@@ -76,7 +77,7 @@ namespace TCPServer
         }
 
         private static object myLocker = new object();
-        private void HandleClient(object obj)
+        private async void HandleClient(object obj)
         {
             String _clientIP = "";
             try
@@ -174,7 +175,44 @@ namespace TCPServer
 
                         latVal = Math.Round(latVal,5);
                         longVal = Math.Round(longVal,5);
+<<<<<<< Updated upstream
                         myWriter.WriteLine(_clientIP + " > " + latVal + ","+longVal + "," + hiz + "km/h");
+=======
+                        myWriter.WriteLine(_clientIP + " > LAT : " + latVal);
+                        myWriter.WriteLine(_clientIP + " > LONG : " + longVal);
+                        myWriter.WriteLine(_clientIP + " > Hiz bilgisi : " + strSpeedByte);
+
+                        //========================  Call API  ========================
+                        var httpClientHandler = new HttpClientHandler();
+                        httpClientHandler.ServerCertificateCustomValidationCallback = (message, cert, chain, sslPolicyErrors) =>
+                        {
+                            return true;
+                        };
+
+                        using (HttpClient httpClient = new HttpClient(httpClientHandler))
+                        {
+                            //var content = await client.GetStringAsync(GlobalVariables.WebAPIBaseUrl + "GetFTPInfo/DUBAI-1");
+                            httpClient.BaseAddress = new Uri(GlobalVariables.WebAPIBaseUrl);
+                            httpClient.DefaultRequestHeaders.Add("User-Agent", "C# console program");
+                            httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                            var url = "AracLog/WriteLog/" + strTerminalIDBytes+"/"+latVal+"/"+longVal+"/"+"Y"+"/"+strSpeedByte;
+                            //var url = "AracLog/WriteLog/" + 4444444444+"/"+444+"/"+444+"/"+"Y"+"/"+44;
+
+                            HttpResponseMessage response = await httpClient.GetAsync(url);
+                            response.EnsureSuccessStatusCode();
+                            var resp = await response.Content.ReadAsStringAsync();
+                            if(response.StatusCode != HttpStatusCode.OK) {
+                                myWriter.WriteLine(_clientIP +  " > API ERROR > : " + resp);
+                                myWriter.WriteLine(" URL : " + url);
+                            }
+                            //FTPBilgiler ftpInfo = JsonConvert.DeserializeObject<FTPBilgiler>(resp);
+                        }
+                        //============================================================
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+>>>>>>> Stashed changes
                     }
                 }
             }
