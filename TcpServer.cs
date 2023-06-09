@@ -175,13 +175,7 @@ namespace TCPServer
 
                         latVal = Math.Round(latVal,5);
                         longVal = Math.Round(longVal,5);
-<<<<<<< Updated upstream
                         myWriter.WriteLine(_clientIP + " > " + latVal + ","+longVal + "," + hiz + "km/h");
-=======
-                        myWriter.WriteLine(_clientIP + " > LAT : " + latVal);
-                        myWriter.WriteLine(_clientIP + " > LONG : " + longVal);
-                        myWriter.WriteLine(_clientIP + " > Hiz bilgisi : " + strSpeedByte);
-
                         //========================  Call API  ========================
                         var httpClientHandler = new HttpClientHandler();
                         httpClientHandler.ServerCertificateCustomValidationCallback = (message, cert, chain, sslPolicyErrors) =>
@@ -209,10 +203,6 @@ namespace TCPServer
                             //FTPBilgiler ftpInfo = JsonConvert.DeserializeObject<FTPBilgiler>(resp);
                         }
                         //============================================================
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
                     }
                 }
             }
