@@ -84,6 +84,7 @@ namespace TCPServer
         private async void HandleClient(object obj)
         {
             String _clientIP = "";
+            string _myIMEI = "";
             try
             {
                 // retrieve client from parameter passed to thread
@@ -155,6 +156,9 @@ namespace TCPServer
                         myWriter.WriteLine("===================================");
 
                         //==========  IMEI - IP Listesi  ======================
+
+                        _myIMEI = strTerminalIDBytes;
+                        /*
                         //lock(myLocker) 
                         {
                             //IMEI varsa listeye ekle
@@ -168,6 +172,7 @@ namespace TCPServer
                                 myList[strTerminalIDBytes] = new List<string> {_clientIP};
                             }
                         }
+                        */
                         //======================================================
 
                         string sendData = "78780501" + strSerilNo + strErrorCheck + "0D0A";
@@ -182,6 +187,7 @@ namespace TCPServer
                     //GPS Msg
                     if(strProtokolNoByte == "22") {
                         //==========  IMEI - IP Listesi  ======================
+                        /*
                         //lock(myLocker) 
                         {
                             //IMEI varsa listeye ekle
@@ -195,6 +201,7 @@ namespace TCPServer
                                 myList[strTerminalIDBytes] = new List<string> {_clientIP};
                             }
                         }
+                        */
                         //=====================================================
 
                         strDateBytes = sData.Substring(8,12);
@@ -211,7 +218,7 @@ namespace TCPServer
 
                         latVal = Math.Round(latVal,5);
                         longVal = Math.Round(longVal,5);
-                        myWriter.WriteLine(_clientIP + " > " + latVal + ","+longVal + "," + hiz + "km/h");
+                        //myWriter.WriteLine(_clientIP + " > " + latVal + ","+longVal + "," + hiz + "km/h");
                         //========================  Call API  ========================
                         var httpClientHandler = new HttpClientHandler();
                         httpClientHandler.ServerCertificateCustomValidationCallback = (message, cert, chain, sslPolicyErrors) =>
@@ -226,13 +233,14 @@ namespace TCPServer
                             httpClient.DefaultRequestHeaders.Add("User-Agent", "C# console program");
                             httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-                            var myIMEI = myList.FirstOrDefault(x => x.Value.Contains(_clientIP)).Key;
-                            if(myIMEI != null) {
+                            //var myIMEI = myList.FirstOrDefault(x => x.Value.Contains(_clientIP)).Key;
+
+                            if(!_myIMEI.Equals("")) {
                                 //var url = "AracLog/WriteLog/" + 4444444444+"/"+444+"/"+444+"/"+"Y"+"/"+44;
-                                var url = "AracLog/WriteLog/" + myIMEI+"/"+latVal+"/"+longVal+"/"+"Y"+"/"+strSpeedByte;
+                                var url = "AracLog/WriteLog/" + _myIMEI+"/"+latVal+"/"+longVal+"/"+"Y"+"/"+strSpeedByte;
 
                                 //gecici log..
-                                myWriter.WriteLine(" URL :::: " + httpClient.BaseAddress + url);
+                                myWriter.WriteLine(_clientIP + " > URL ::: " + httpClient.BaseAddress + url);
 
 
                                 HttpResponseMessage response = await httpClient.GetAsync(url);
