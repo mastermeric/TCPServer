@@ -159,7 +159,7 @@ namespace TCPServer
 
                         _myIMEI = strTerminalIDBytes;
                         /*
-                        //lock(myLocker) 
+                        //lock(myLocker)
                         {
                             //IMEI varsa listeye ekle
                             if(myList.ContainsKey(strTerminalIDBytes)) {
@@ -188,7 +188,7 @@ namespace TCPServer
                     if(strProtokolNoByte == "22") {
                         //==========  IMEI - IP Listesi  ======================
                         /*
-                        //lock(myLocker) 
+                        //lock(myLocker)
                         {
                             //IMEI varsa listeye ekle
                             if(myList.ContainsKey(strTerminalIDBytes)) {
@@ -237,7 +237,7 @@ namespace TCPServer
 
                             if(!_myIMEI.Equals("")) {
                                 //var url = "AracLog/WriteLog/" + 4444444444+"/"+444+"/"+444+"/"+"Y"+"/"+44;
-                                var url = "AracLog/WriteLog/" + _myIMEI+"/"+latVal+"/"+longVal+"/"+"Y"+"/"+strSpeedByte;
+                                var url = "AracLog/WriteLog/" + _myIMEI+"/"+latVal+"/"+longVal+"/"+"Y"+"/"+hiz;
 
                                 //gecici log..
                                 myWriter.WriteLine(_clientIP + " > URL ::: " + httpClient.BaseAddress + url);
