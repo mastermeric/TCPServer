@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Collections.Concurrent;
 using System;
 using System.Collections.Generic;
@@ -114,8 +115,9 @@ namespace TCPServer
                 String strLatBytes = "";
                 String strLongBytes = "";
                 String strSpeedByte = "";
-
-
+                String strACCStatus = "";
+                String KontakStatu = "X";
+                String strVoltageLevel = "X";
 
                 NetworkStream stream = client.GetStream();
                 Int32 _numberOfBytesInTCP = stream.Read(data, 0, data.Length);
@@ -184,8 +186,20 @@ namespace TCPServer
                         stream.Write(sendDataBytes, 0, sendDataBytes.Length);
                     }
 
+
+                     //INFO Msg :
+                    if(strProtokolNoByte == "13") {
+                        strVoltageLevel  = sData.Substring(12,2);
+                        myWriter.WriteLine(":::: INFO :::: ");
+                        myWriter.WriteLine(sData);
+                        myWriter.WriteLine(":: Voltage >> " + strVoltageLevel);
+                    }
+
                     //GPS Msg
                     if(strProtokolNoByte == "22") {
+
+                        myWriter.WriteLine(":::: GPS  :::: ");
+                        myWriter.WriteLine(sData);
                         //==========  IMEI - IP Listesi  ======================
                         /*
                         //lock(myLocker)
@@ -209,6 +223,7 @@ namespace TCPServer
                         strLatBytes =sData.Substring(22,8);
                         strLongBytes =sData.Substring(30,8);
                         strSpeedByte = sData.Substring(38,2);
+                        strACCStatus = sData.Substring(60,2);
 
                         //myWriter.WriteLine(_clientIP +  " > Date: " +  strDateBytes+  "  Lat: " +  strLatBytes+  " Lon: " +  strLongBytes+  " Speed: " +  strSpeedByte);
 
@@ -237,7 +252,13 @@ namespace TCPServer
 
                             if(!_myIMEI.Equals("")) {
                                 //var url = "AracLog/WriteLog/" + 4444444444+"/"+444+"/"+444+"/"+"Y"+"/"+44;
-                                var url = "AracLog/WriteLog/" + _myIMEI+"/"+latVal+"/"+longVal+"/"+"Y"+"/"+hiz;
+                                if(strACCStatus == "01" ) {
+                                    KontakStatu = "Y" ;
+                                } else {
+                                    KontakStatu = "N" ;
+                                }
+
+                                var url = "AracLog/WriteLog/" + _myIMEI+"/"+latVal+"/"+longVal+"/"+KontakStatu+"/"+hiz + "/" + strVoltageLevel;
 
                                 //gecici log..
                                 myWriter.WriteLine(_clientIP + " > URL ::: " + httpClient.BaseAddress + url);
@@ -257,6 +278,14 @@ namespace TCPServer
                             }
                         }
                         //============================================================
+                    }
+
+
+
+                    //ALARM Msg : GPS + LBS + Status(Voltage + SignalStrength)
+                    if(strProtokolNoByte == "16") {
+                        myWriter.WriteLine(":::: ALARM :::: ");
+                        myWriter.WriteLine(sData);
                     }
                 }
             }
