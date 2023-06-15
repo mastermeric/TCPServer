@@ -12,38 +12,26 @@ class Program
     {
         try
         {
+            MultiThreadFileWriter myWriter = new MultiThreadFileWriter();
 
             if (args is null)
             {
                 Console.WriteLine("ERROR at Args!");
             }
 
+            Console.WriteLine("====================");
             Console.WriteLine("SERVER Started.. OK..");
+            Console.WriteLine("====================");
+
+            myWriter.WriteLine("====================");
+            myWriter.WriteLine("SERVER Started.. OK..");
+            myWriter.WriteLine("====================");
 
             //metot1
             TcpServer server = new TcpServer(6666);
             //Console.ReadLine();
             ManualResetEvent _quitEvent = new ManualResetEvent(false);
             _quitEvent.WaitOne();
-
-            // _ = Task.Factory.StartNew(() =>
-            // {
-            //     TcpServer server = new TcpServer(6666);
-            //     Console.ReadLine();
-            // }, TaskCreationOptions.LongRunning);
-
-            // while(true)
-            // {
-            //     TcpServer server = new TcpServer(6666);
-            //     Console.ReadLine();
-            // }
-            // ThreadStart ts = new ThreadStart(StartOp);
-            // Thread th = new Thread(ts);
-            // th.Start();
-
-
-            //metot2
-            // await new Program().StartListener();
         }
         catch (Exception ex)
         {

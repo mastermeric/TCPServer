@@ -88,25 +88,21 @@ namespace TCPServer
             string _myIMEI = "";
             try
             {
-                // retrieve client from parameter passed to thread
+            // retrieve client from parameter passed to thread
             TcpClient client = (TcpClient)obj;
 
             //Boolean bClientConnected = true;
             String sData = null;
 
             _clientIP = IPAddress.Parse(((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString()).ToString();
+            String strVoltageLevel = "XX";
 
             while (true)
             {
                 //Yontem3 : Read Byte arrays..
                 Byte[] data = new Byte[256];
-
-                String strStartBits = "";
-                String strStoptBits = "";
-
                 String strSerilNo = "";
                 String strErrorCheck = "";
-
                 String strDataLen = "";
                 String strProtokolNoByte = "";
                 String strTerminalIDBytes = "";
@@ -117,7 +113,6 @@ namespace TCPServer
                 String strSpeedByte = "";
                 String strACCStatus = "";
                 String KontakStatu = "X";
-                String strVoltageLevel = "X";
 
                 NetworkStream stream = client.GetStream();
                 Int32 _numberOfBytesInTCP = stream.Read(data, 0, data.Length);
@@ -126,16 +121,16 @@ namespace TCPServer
 
                 sData = BitConverter.ToString(dataReal).Replace("-","");
 
-                if(_numberOfBytesInTCP > 0)
+                if(_numberOfBytesInTCP <= 0)
                 {
-                    //MericY: Loglama icin tut..
-                    //Console.WriteLine(client.Client.Handle.ToString() +  " > " + _clientIP + " > "+ sData);
-                    //myWriter.WriteLine(client.Client.Handle.ToString() +  " > " + _clientIP + " > "+ sData);
-                } else {
                     Console.WriteLine(client.Client.Handle.ToString() +  " > " + _clientIP + " Is Disconnected !");
                     myWriter.WriteLine(client.Client.Handle.ToString() +  " > " + _clientIP + " Is Disconnected ! ");
                     client.Close();
                     break;
+                } else {
+                    //OK.. Connection sağlandı.. MericY: Loglama icin tut..
+                    //Console.WriteLine(client.Client.Handle.ToString() +  " > " + _clientIP + " > "+ sData);
+                    //myWriter.WriteLine(client.Client.Handle.ToString() +  " > " + _clientIP + " > "+ sData);
                 }
 
 
@@ -153,46 +148,30 @@ namespace TCPServer
                         strSerilNo =sData.Substring(24,4);
                         strErrorCheck = sData.Substring(28,4);
 
-                        myWriter.WriteLine("===================================");
                         myWriter.WriteLine(_clientIP +  " > IMEI >> " +  strTerminalIDBytes);
-                        myWriter.WriteLine("===================================");
-
-                        //==========  IMEI - IP Listesi  ======================
 
                         _myIMEI = strTerminalIDBytes;
-                        /*
-                        //lock(myLocker)
-                        {
-                            //IMEI varsa listeye ekle
-                            if(myList.ContainsKey(strTerminalIDBytes)) {
-                                //listede yok ise ekle
-                                if(!myList[strTerminalIDBytes].Contains(_clientIP)) {
-                                    myList[strTerminalIDBytes].Add(_clientIP);
-                                }
-                            }else {
-                                //IMEI ilkke gleince listeyi yarat..
-                                myList[strTerminalIDBytes] = new List<string> {_clientIP};
-                            }
-                        }
-                        */
-                        //======================================================
 
                         string sendData = "78780501" + strSerilNo + strErrorCheck + "0D0A";
                         //Console.WriteLine(_clientIP +  " > SEND DATA >> " +  sendData);
 
                         //stream.Flush();
                         //NetworkStream tempStream = client.GetStream();
+                        /*
                         Byte[] sendDataBytes = ConvertHexStringToByteArray(sendData);
                         stream.Write(sendDataBytes, 0, sendDataBytes.Length);
+                        */
                     }
 
 
                      //INFO Msg :
                     if(strProtokolNoByte == "13") {
                         strVoltageLevel  = sData.Substring(12,2);
+                        /*
                         myWriter.WriteLine(":::: INFO :::: ");
                         myWriter.WriteLine(sData);
                         myWriter.WriteLine(":: Voltage >> " + strVoltageLevel);
+                        */
                     }
 
                     //GPS Msg
@@ -200,23 +179,6 @@ namespace TCPServer
 
                         myWriter.WriteLine(":::: GPS  :::: ");
                         myWriter.WriteLine(sData);
-                        //==========  IMEI - IP Listesi  ======================
-                        /*
-                        //lock(myLocker)
-                        {
-                            //IMEI varsa listeye ekle
-                            if(myList.ContainsKey(strTerminalIDBytes)) {
-                                //listede yok ise ekle
-                                if(!myList[strTerminalIDBytes].Contains(_clientIP)) {
-                                    myList[strTerminalIDBytes].Add(_clientIP);
-                                }
-                            }else {
-                                //IMEI ilkke gleince listeyi yarat..
-                                myList[strTerminalIDBytes] = new List<string> {_clientIP};
-                            }
-                        }
-                        */
-                        //=====================================================
 
                         strDateBytes = sData.Substring(8,12);
                         strQuantityOfSattelites =sData.Substring(20,2);
@@ -225,15 +187,13 @@ namespace TCPServer
                         strSpeedByte = sData.Substring(38,2);
                         strACCStatus = sData.Substring(60,2);
 
-                        //myWriter.WriteLine(_clientIP +  " > Date: " +  strDateBytes+  "  Lat: " +  strLatBytes+  " Lon: " +  strLongBytes+  " Speed: " +  strSpeedByte);
-
                         decimal latVal = DecodeCoordinate(ConvertHexStringToByteArray(strLatBytes));
                         decimal longVal = DecodeCoordinate(ConvertHexStringToByteArray(strLongBytes));
                         Int64 hiz = Int64.Parse(strSpeedByte, System.Globalization.NumberStyles.HexNumber);
 
                         latVal = Math.Round(latVal,5);
                         longVal = Math.Round(longVal,5);
-                        //myWriter.WriteLine(_clientIP + " > " + latVal + ","+longVal + "," + hiz + "km/h");
+
                         //========================  Call API  ========================
                         var httpClientHandler = new HttpClientHandler();
                         httpClientHandler.ServerCertificateCustomValidationCallback = (message, cert, chain, sslPolicyErrors) =>
@@ -248,10 +208,9 @@ namespace TCPServer
                             httpClient.DefaultRequestHeaders.Add("User-Agent", "C# console program");
                             httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-                            //var myIMEI = myList.FirstOrDefault(x => x.Value.Contains(_clientIP)).Key;
 
                             if(!_myIMEI.Equals("")) {
-                                //var url = "AracLog/WriteLog/" + 4444444444+"/"+444+"/"+444+"/"+"Y"+"/"+44;
+
                                 if(strACCStatus == "01" ) {
                                     KontakStatu = "Y" ;
                                 } else {
